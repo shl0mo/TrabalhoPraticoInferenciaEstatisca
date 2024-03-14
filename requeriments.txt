@@ -1,0 +1,4 @@
+pandas
+ucimlrepo
+scipy
+numpy
