@@ -310,7 +310,7 @@ def getDataSetFromPath(dataset_path):
                 # Concatena o diretório raiz com o nome do arquivo para formar o caminho completo
                 full_path = os.path.join(root, file)
                 datafiles_path.append(full_path)
-            if file.enswith(".csv"):
+            if file.endswith(".csv"):
                 full_path = os.path.join(root, file)
                 datafiles_path.append(full_path)
             
