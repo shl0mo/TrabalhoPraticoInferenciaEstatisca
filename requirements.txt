@@ -2,6 +2,6 @@ numpy
 pandas
 scipy
 requests
-zipfile
 streamlit
-sklearn.linear_model
+scikit-learn
+matplotlib

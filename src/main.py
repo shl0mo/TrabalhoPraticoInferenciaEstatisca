@@ -4,6 +4,7 @@ import scipy.stats as stats
 import os
 import requests
 import zipfile
+import matplotlib as plt
 
 import streamlit as st
 
@@ -23,35 +24,34 @@ def getTestDone(data, var1, var2):
 
     tests_options = []
     # Scenario handling based on variable types
-    if is_var1_categorical and is_var2_categorical:
-        tests_options.append("Chi-square Test")
-    elif is_var1_categorical != is_var2_categorical:
-        tests_options.append("T-test")
-        if len(data[var1].unique()) > 2 or len(data[var2].unique()) > 2:
-            tests_options.append("ANOVA")
-    else:
-        tests_options.append("Correlation Analysis")
-        tests_options.append("Linear Regression Analysis")
+    
+    tests_options.append("Chi-square Test")
+    tests_options.append("T-test")
+    tests_options.append("ANOVA")
+    tests_options.append("Correlation Analysis")
+    tests_options.append("Linear Regression Analysis")
+    
 
     selected_test = st.selectbox("Select a test based on the variable types:", tests_options)
 
+    
+    print(tests_options)
+    
     # Execute the selected test
     if selected_test == "Chi-square Test":
-        st.write("Both variables are categorical. Performing Chi-square Test...")
-        # chi_square_test function call goes here - Note: You need to adapt it for two categorical vars or choose another approach
+        
+        results = chi_square_test(data)
+        st.write("Chi-square Test Results")
+        st.write(results)
+        
     elif selected_test == "T-test":
-        st.write("One variable is categorical with two categories, and the other is continuous. Performing T-test...")
-        continuous_var = var1 if not is_var1_categorical else var2
-        categorical_var = var1 if is_var1_categorical else var2
-        group1_label, group2_label = data[categorical_var].unique()[:2]
-        results = student_t_test(data[continuous_var], data[categorical_var], group1_label, group2_label)
+        results = student_t_test(data)
         display_test_results("T-test Results", results)
+        
     elif selected_test == "ANOVA":
-        st.write("Categorical variable has more than two categories. Performing ANOVA...")
-        continuous_var = var1 if not is_var1_categorical else var2
-        categorical_var = var1 if is_var1_categorical else var2
-        results = anova_test(data, continuous_var, categorical_var)
+        results = anova_test(data)
         display_test_results("ANOVA Results", results)
+        
     elif selected_test == "Correlation Analysis":
         st.write("Both variables are continuous. Performing Correlation Analysis...")
         results = correlation_analysis(data, var1, var2)
@@ -62,13 +62,6 @@ def getTestDone(data, var1, var2):
         display_test_results("Linear Regression Analysis Results", results)
 
 def display_test_results(title, results):
-    """
-    Displays the results of statistical tests in Streamlit.
-    
-    Parameters:
-    - title: Title of the test results to display.
-    - results: Results of the test in a list or dictionary format.
-    """
     st.subheader(title)
     if isinstance(results, list):
         # Assuming results are in the format: [statistic, p-value]
@@ -78,130 +71,82 @@ def display_test_results(title, results):
         for key, value in results.items():
             st.metric(label=key, value=f"{value:.3f}")
 
+def chi_square_test(data, alpha=0.05):
+    chi_square_statistic_all = {}
+    p_value_all = {}
+    # Assuming each column represents a categorical variable
+    for column in data.columns:
+        # Extract the feature data
+        feature = data[column]
+        # Calculate observed frequency counts
+        observed_freq = feature.value_counts().sort_index()
+        observed_values = observed_freq.values
+        # Calculate expected values assuming uniform distribution
+        num_categories = len(observed_freq)
+        expected_values = np.full(num_categories, observed_values.sum() / num_categories)
+        # Perform chi-square test
+        chi_square_statistic, p_value = stats.chisquare(f_obs=observed_values, f_exp=expected_values)
 
-
-
+        # Print test results
+        print(f"Chi-Square Test for the variable '{column}':")
+        print(f"Test Statistic: {chi_square_statistic}")
+        print(f"P-value: {p_value}")
+        if p_value < alpha:
+            print("Null hypothesis rejected - The distribution is not uniform.")
+        else:
+            print("Failed to reject the null hypothesis - The distribution is uniform.")
+        print("\n")
         
-         
-def chi_square_test(data, feature_name, alpha=0.05):
-    """
-    Performs a chi-square test on a specified feature to check if it follows a uniform distribution.
+        chi_square_statistic_all[column] = chi_square_statistic
+        p_value_all[column] = p_value
+        
+    return {"Chi-Square Statistic": chi_square_statistic_all, "P-value": p_value_all} 
 
-    Parameters:
-    - data: DataFrame or similar structure containing the data.
-    - feature_name: String name of the feature to be tested.
-    - alpha: Significance level for the test. Default is 0.05.
+def student_t_test(data):
+    #rafael
+    print("ok")
+    # Retorna os resultados dos testes
+    return test_results
 
-    Returns:
-    None, but prints the test results.
-    """
-    # Extract the feature data
-    feature = data[feature_name]
-    # Calculate observed values
-    observed_values, bins = np.histogram(feature, bins=10)
-    # Calculate expected values assuming uniform distribution
-    expected_values = np.ones_like(observed_values) * len(feature) / 10
-    # Perform chi-square test
-    chi_square_statistic, p_value = stats.chisquare(f_obs=observed_values, f_exp=expected_values)
-    
-    # Print test results
-    print(f"Chi-Square Test for the feature '{feature_name}'")
-    print(f"Test Statistic: {chi_square_statistic}")
-    print(f"P-value: {p_value}")
-    if p_value < alpha:
-        print("Null hypothesis rejected - The distribution is not uniform.")
-        st.write("Null hypothesis rejected - The distribution is not uniform.")
-    else:
-        print("Failed to reject the null hypothesis - The distribution is uniform.")
-        st.write("Failed to reject the null hypothesis - The distribution is uniform.")
 
-    return [chi_square_statistic, p_value]
-
-def student_t_test(feature_data, labels, group1_label, group2_label, alpha=0.05):
-    """
-    Performs a Student's t-test between two specified groups for a given feature.
-
-    Parameters:
-    - feature_data: Array-like, the data of the feature to test.
-    - labels: Array-like, the labels corresponding to the feature data.
-    - group1_label: The label of the first group for comparison.
-    - group2_label: The label of the second group for comparison.
-    - alpha: Significance level for the test. Default is 0.05.
-
-    Returns:
-    None, but prints the test results.
-    """
-    # Split the data into two samples based on the labels
-    sample1 = feature_data[labels == group1_label]
-    sample2 = feature_data[labels == group2_label]
-    # Perform Student's t-test
-    stat, p_value = stats.ttest_ind(sample1, sample2)
-
-    
-    # Print test results
-    print(f"Student's t-test for the feature between '{group1_label}' and '{group2_label}'")
-    print(f"Test Statistic: {stat}")
-    print(f"P-value: {p_value}")
-    if p_value < alpha:
-        print("Null hypothesis rejected - There is a significant difference between the groups.")
-        st.write("Null hypothesis rejected - There is a significant difference between the groups.")
-    else:
-        print("Failed to reject the null hypothesis - No significant difference between the groups.")
-        st.write("Failed to reject the null hypothesis - No significant difference between the groups.")
-    print("\n")
-
-    return [stat, p_value]
 
 def anova_test(data, continuous_var, categorical_var, alpha=0.05):
-    """
-    Performs an ANOVA test to compare means across multiple groups in a single continuous variable.
-    
-    Parameters:
-    - data: DataFrame containing the dataset.
-    - continuous_var: String, name of the continuous variable column in `data`.
-    - categorical_var: String, name of the categorical variable column in `data`.
-    - alpha: Significance level for the test. Default is 0.05.
-    
-    Returns:
-    None, but prints the test results.
-    """
-    # Ensure categorical_var is in data
+
     if categorical_var not in data.columns or continuous_var not in data.columns:
         raise ValueError("Specified variables must be in the provided DataFrame.")
     
     # Get unique group labels
     group_labels = data[categorical_var].unique()
     
-    # Prepare samples
-    samples = [data[data[categorical_var] == label][continuous_var] for label in group_labels]
-    
-    # Perform ANOVA test
-    stat, p_value = stats.f_oneway(*samples)
-    
-    # Print test results
-    print(f"ANOVA test for {continuous_var} across groups in {categorical_var}")
-    print(f"Test Statistic: {stat}")
-    print(f"P-value: {p_value}")
-    if p_value < alpha:
-        print("Null hypothesis rejected - There is a significant difference between at least two groups.")
-        st.write("Null hypothesis rejected - There is a significant difference between at least two groups.")
+    if len(group_labels) == 2:
+        # Perform t-test for two categories
+        group1_label, group2_label = group_labels
+        results = student_t_test(data[continuous_var], data[categorical_var], group1_label, group2_label)
+        display_test_results("T-test Results", results)
     else:
-        print("Failed to reject the null hypothesis - No significant difference between the groups.")
-        st.write("Failed to reject the null hypothesis - No significant difference between the groups.")
-    return [stat, p_value]
+        # Perform ANOVA test for more than two categories
+        samples = [data[data[categorical_var] == label][continuous_var] for label in group_labels]
+        stat, p_value = stats.f_oneway(*samples)
+        results = [stat, p_value]
+        display_test_results("ANOVA Results", results)
+        
+        
+def identify_variables(data):
+    num_vars = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    cat_vars = data.select_dtypes(include=['object', 'category']).columns.tolist()
+
+    categorical_var = None
+    continuous_var = None
+
+    if len(num_vars) == 1 and len(cat_vars) == 1:
+        continuous_var = num_vars[0]
+        categorical_var = cat_vars[0]
+
+    return categorical_var, continuous_var
 
 
 def correlation_analysis(data, var1, var2):
-    """
-    Performs a Pearson correlation analysis between two continuous variables.
 
-    Parameters:
-    - data: DataFrame containing the dataset.
-    - var1: String, name of the first continuous variable column in `data`.
-    - var2: String, name of the second continuous variable column in `data`.
-
-    Prints the correlation coefficient and the p-value.
-    """
     if var1 not in data.columns or var2 not in data.columns:
         raise ValueError("Both variables must be present in the data.")
 
@@ -219,19 +164,8 @@ def correlation_analysis(data, var1, var2):
 
     return [correlation_coef, p_value]
 
-
-
 def linear_regression_analysis(data, independent_var, dependent_var):
-    """
-    Performs a simple linear regression analysis between one independent and one dependent variable.
 
-    Parameters:
-    - data: DataFrame containing the dataset.
-    - independent_var: String, name of the independent variable column in `data`.
-    - dependent_var: String, name of the dependent variable column in `data`.
-
-    Prints the slope, intercept, and R-squared value of the regression model.
-    """
     if independent_var not in data.columns or dependent_var not in data.columns:
         raise ValueError("Both variables must be present in the data.")
     
@@ -253,8 +187,8 @@ def linear_regression_analysis(data, independent_var, dependent_var):
     st.write(f"R-squared: {model.score(X, y):.3f}")
     st.write("Higher R-squared values indicate a better fit for the model.")
 
-
     return [model.coef_[0], model.intercept_, model.score(X, y)]
+
 
 
 
@@ -372,6 +306,14 @@ def getDataSetFromPath(dataset_path):
                 # Concatena o diretório raiz com o nome do arquivo para formar o caminho completo
                 full_path = os.path.join(root, file)
                 datafiles_path.append(full_path)
+            if file.endswith(".xlsx"):
+                # Concatena o diretório raiz com o nome do arquivo para formar o caminho completo
+                full_path = os.path.join(root, file)
+                datafiles_path.append(full_path)
+            if file.enswith(".csv"):
+                full_path = os.path.join(root, file)
+                datafiles_path.append(full_path)
+            
     return datafiles_path
 
 
