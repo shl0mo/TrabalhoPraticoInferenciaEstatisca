@@ -272,26 +272,88 @@ def unzip_dataset(path_to_zip_file, directory_to_extract_to,dataset_name):
     return os.path.join(directory_to_extract_to)
 
 
-def get_dataset_info(dataset_path_complete):
+def load_dataset(file_path):
+    """
+    Load the dataset based on its extension.
+    
+    Parameters:
+    - file_path: str, the path to the dataset file.
+    
+    Returns:
+    - A pandas DataFrame containing the loaded dataset.
+    """
+    if file_path.endswith('.csv') or file_path.endswith('.data'):
+        data = pd.read_csv(file_path, header=None)
+    elif file_path.endswith('.xlsx'):
+        data = pd.read_excel(file_path, header=None)
+    else:
+        raise ValueError("Unsupported file format.")
+    
+    return data
 
-    # Load the dataset
-    data = pd.read_csv(dataset_path_complete, header=None)
-    # add column names based on length of the dataset
+def add_column_names(data):
+    """
+    Adds column names based on the length of the dataset.
+    
+    Parameters:
+    - data: DataFrame, the dataset without column names.
+    
+    Returns:
+    - The dataset with added column names.
+    """
     data.columns = [f'feature_{i+1}' for i in range(data.shape[1])]
+    return data
 
+def display_dataset_info(data):
+    """
+    Display various information about the dataset.
+    
+    Parameters:
+    - data: DataFrame, the dataset to display information for.
+    """
+    print(data.head())  # Display the first 5 rows
+    print(data.shape)  # Display the shape
+    print(data.columns)  # Display the column names
+    print(data.dtypes)  # Display the data types
+    print(data.isnull().sum())  # Display missing values
+    print(data.describe())  # Display summary statistics
 
-    # Display the first 5 rows of the dataset
-    print(data.head())
-    # Display the shape of the dataset
-    print(data.shape)
-    # Display the column names
-    print(data.columns)
-    # Display the data types of the columns
-    print(data.dtypes)
-    # Display the number of missing values in each column
-    print(data.isnull().sum())
-    # Display the summary statistics of the dataset
-    print(data.describe())
+def get_dataset_info(dataset_path):
+    """
+    Load a dataset and display its information.
+    
+    Parameters:
+    - dataset_path: str, the path to the dataset file.
+    
+    Returns:
+    - Various details about the dataset for further use.
+    """
+    data = load_dataset(dataset_path)
+    data = add_column_names(data)
+    display_dataset_info(data)
+    
+    return data.head(), data.shape, data.columns, data.dtypes, data.isnull().sum(), data.describe(), data
+
+        
+    if dataset_path_complete.endswith('.xlsx'):
+        # Load the dataset
+        data = pd.read_excel(dataset_path_complete, header=None)
+        # add column names based on length of the dataset
+        data.columns = [f'feature_{i+1}' for i in range(data.shape[1])]
+
+        # Display the first 5 rows of the dataset
+        print(data.head())
+        # Display the shape of the dataset
+        print(data.shape)
+        # Display the column names
+        print(data.columns)
+        # Display the data types of the columns
+        print(data.dtypes)
+        # Display the number of missing values in each column
+        print(data.isnull().sum())
+        # Display the summary statistics of the dataset
+        print(data.describe())
+    
 
     return data.head(), data.shape, data.columns, data.dtypes, data.isnull().sum(), data.describe() , data
 
