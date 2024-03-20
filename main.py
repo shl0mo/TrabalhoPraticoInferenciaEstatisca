@@ -264,8 +264,8 @@ def mann_whitney_test(data):
         st.markdown("""
             Teste Mann-Whitney
         """)
-    # tests_group = data[data[""] ==]
-    # exercises_group = data[data[""] ==]
+    tests_group = data[data["EXERCISE_TYPE"] == "TP"]
+    exercises_group = data[data["EXERCISE_TYPE"] == "LAe"]
     f_statistc, p_value = stats.mannwhitneyu(tests_group, exercises_group, "two-sided")
 
               
