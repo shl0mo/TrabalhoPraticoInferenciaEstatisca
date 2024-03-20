@@ -263,19 +263,36 @@ def anova_test(data, continuous_var, categorical_var, alpha=0.05):
         st.markdown("### ANOVA Results")
         st.text(f"F-Statistic: {f_statistic:.4f}\nP-Valor: {p_value:.4f}\n{result_text}")
 
-def mann_whitney_test(data):
+def mann_whitney_test(data, alpha=0.05):
     with st.expander("Sobre o teste Mann-Whitney 📘"):
         st.markdown("""
-            Teste Mann-Whitney
+            O teste de **Mann-Whitney** é um teste não paramétrico utilizado para determinar se duas amostras independentes foram tiradas de populações com a mesma distribuição. Ele é usado quando as suposições necessárias para o teste t de Student não são atendidas, como quando os dados não são normalmente distribuídos.
+
+            - **Hipótese nula (H0):** As distribuições das duas amostras são iguais.
+            - **Hipótese alternativa (H1):** As distribuições das duas amostras não são iguais.
         """)
     print("Mann-Whitney")
-    print(data)
-    tests_group = data[df[4] == "TP"]
-    exercises_group = data[data[4] == "LAB"]
-    f_statistc, p_value = stats.mannwhitneyu(tests_group, exercises_group, "two-sided")
+    tests_group = data[data[4] == "TP"][3].tolist()
+    exercises_group = data[data[4] == "LAB"][3].tolist()
+    n1 = len(tests_group)
+    n2 = len(exercises_group)
+    u_obs, p_value = stats.mannwhitneyu(tests_group, exercises_group, alternative="two-sided")
+    result_test = ""
+    if (p_value >= alpha):
+        result_text = f"Considerando que o valor-p $p$ obtido foi maior ou igual ao nível de significância $\\alpha$, isso é, ${p_value:.4f} >= {alpha}$, então não rejeitamos a hipótese nula de que as amostras possuem distribuições iguais. 👌"
+    else:
+        result_text = f"Considerando que o valor-p $p$ obtido foi menor que o nível de significância $\\alpha$, isso é, ${p_value:.4f} < {alpha}$ então rejeitamos a hipótese nula de que as amostras possuem distribuições iguais. ⛔"
     with st.expander("Resultados do Teste Mann-Whitney"):
         st.markdown("### Mann-Whitney Results")
-        st.text(f"F-Statistic: {f_statistic:.4f}\nP-Valor: {p_value:.4f}\n{result_text}")
+        obs_string = "obs"
+        st.markdown(f"""
+                $n_{1} = {n1}$\n
+                $n_{2} = {n2}$\n
+                $\\alpha = {alpha}$\n
+                $U_{{obs}} = {u_obs:.4f}$\n
+                $p = {p_value:.4f}$\n
+                **Conclusão**: {result_text}
+        """)
 
               
 def identify_variables(data):
@@ -430,6 +447,8 @@ def unzip_dataset(path_to_zip_file, directory_to_extract_to,dataset_name):
 def load_dataset(file_path):
     if file_path.endswith('.csv') or file_path.endswith('.data'):
         data = pd.read_csv(file_path, header=None)
+        if "codebench" in file_path:
+            data[1] = data[1].astype("str")
     elif file_path.endswith('.xlsx'):
         data = pd.read_excel(file_path, header=None)
     else:
