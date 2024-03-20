@@ -45,9 +45,12 @@ def getTestDone(data):
 
         
     elif selected_test == "T-test":
-        select_colums_categorico(data)
-        results = student_t_test(data)
-        display_test_results("T-test Results", results)
+        var1, var2 = select_columns_continuo(data)
+        stat, p_value = student_t_test(data,var1, var2)
+        st.write("T-test Results")
+        st.write(f"Statistic: {stat:.3f}")
+        st.write(f"P-value: {p_value:.3f}")
+        
         
     elif selected_test == "ANOVA":
         select_colums_categorico(data)
@@ -98,14 +101,6 @@ def chi_square_test(data, var1, var2):
     # Convert index and columns to string for compatibility
     contingency_table.index = contingency_table.index.map(str)
     contingency_table.columns = contingency_table.columns.map(str)
-    
-    # Display the contingency table
-    print("Contingency Table:")
-    print(contingency_table)
-    
-   
-    contingency_table_df = pd.DataFrame(contingency_table).reset_index()
-   
 
     # Convertendo a tabela de contingência para HTML
     contingency_table_html = contingency_table.to_html()
@@ -148,12 +143,27 @@ def generateVisualizationsInTabs(data):
                     ax.set_title(f"Boxplot for {column}")
                     st.pyplot(fig)      
 
-def student_t_test(data):
-    #rafael
-    print("ok")
-    # Retorna os resultados dos testes
-    test_results={}
-    return test_results
+def student_t_test(data, var1, var2):
+    # Selecionando os dados das colunas especificadas pelos índices var1 e var2
+    sample1 = data.iloc[:, var1]
+    sample2 = data.iloc[:, var2]
+    
+    # Removendo possíveis NaNs para evitar erros no teste
+    sample1 = sample1.dropna()
+    sample2 = sample2.dropna()
+
+    # Utilizando o expander para mostrar as amostras de maneira colapsável
+    with st.expander("Ver Amostra 1👀"):
+        st.table(sample1)
+
+    with st.expander("Ver Amostra 2 👀"):
+        st.table(sample2)
+
+    # Realizando o teste t para amostras independentes
+    stat, p_value = stats.ttest_ind(sample1, sample2)
+    
+    return stat, p_value
+    
 
 def anova_test(data, continuous_var, categorical_var, alpha=0.05):
 
