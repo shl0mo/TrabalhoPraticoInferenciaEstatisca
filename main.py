@@ -23,6 +23,7 @@ def getTestDone(data):
     tests_options.append("Chi-square Test")
     tests_options.append("T-test")
     tests_options.append("ANOVA")
+    tests_options.append("Mann-Whitney")
     tests_options.append("Correlation Analysis")
     tests_options.append("Linear Regression Analysis")
     
@@ -68,6 +69,9 @@ def getTestDone(data):
     elif selected_test == "ANOVA":
         var1,var2 =select_one_column_continuo_and_the_other_categorical(data)
         results = anova_test(data,var1,var2)
+
+    elif selected_test == "Mann-Whitney":
+        mann_whitney_test(data)
             
     if selected_test == "Correlation Analysis":    
         var1, var2 = select_columns_continuo(data)
@@ -264,9 +268,14 @@ def mann_whitney_test(data):
         st.markdown("""
             Teste Mann-Whitney
         """)
-    tests_group = data[data["EXERCISE_TYPE"] == "TP"]
-    exercises_group = data[data["EXERCISE_TYPE"] == "LAe"]
+    print("Mann-Whitney")
+    print(data)
+    tests_group = data[df[4] == "TP"]
+    exercises_group = data[data[4] == "LAB"]
     f_statistc, p_value = stats.mannwhitneyu(tests_group, exercises_group, "two-sided")
+    with st.expander("Resultados do Teste Mann-Whitney"):
+        st.markdown("### Mann-Whitney Results")
+        st.text(f"F-Statistic: {f_statistic:.4f}\nP-Valor: {p_value:.4f}\n{result_text}")
 
               
 def identify_variables(data):
