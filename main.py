@@ -6,6 +6,8 @@ import requests
 import zipfile
 import seaborn as sns
 import matplotlib.pyplot as plt
+import unicodedata
+import re
 
 import streamlit as st
 
@@ -360,6 +362,14 @@ def download_dataset(dataset_url):
     # Construct the download URL
     download_url = f"https://archive.ics.uci.edu/static/public/{dataset_id}/{dataset_name}.zip"
     print(f'Download URL: {download_url}')
+    # retire todos os caracteres epecias  e espeacos
+    normalized_dataset_name = re.sub('[\n\r\t]+', '', dataset_name)  # Remove espaços, quebras de linha, e tabs
+    normalized_dataset_name = re.sub('[\+\-]+', '', normalized_dataset_name)  # Remove símbolos específicos como + e -
+
+    # Para remover acentos e normalizar caracteres
+    normalized_dataset_name = ''.join((c for c in unicodedata.normalize('NFD', normalized_dataset_name) if unicodedata.category(c) != 'Mn'))
+
+    
     # Define download_path outside of the if statement to ensure it's always available
     download_path = os.path.join('Data', dataset_name + '.zip')
 
@@ -409,7 +419,9 @@ def unzip_dataset(path_to_zip_file, directory_to_extract_to,dataset_name):
     return os.path.join(directory_to_extract_to)
 
 def load_dataset(file_path):
-    if file_path.endswith('.csv') or file_path.endswith('.data'):
+    if file_path.endswith('.csv'):
+        data = pd.read_csv(file_path, header=None,sep=';')
+    elif file_path.endswith('.data'):
         data = pd.read_csv(file_path, header=None)
     elif file_path.endswith('.xlsx'):
         data = pd.read_excel(file_path, header=None)
