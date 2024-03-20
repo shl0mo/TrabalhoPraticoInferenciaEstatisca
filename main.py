@@ -258,6 +258,16 @@ def anova_test(data, continuous_var, categorical_var, alpha=0.05):
     with st.expander("Resultados do Teste ANOVA"):
         st.markdown("### ANOVA Results")
         st.text(f"F-Statistic: {f_statistic:.4f}\nP-Valor: {p_value:.4f}\n{result_text}")
+
+def mann_whitney_test(data):
+    with st.expander("Sobre o teste Mann-Whitney 📘"):
+        st.markdown("""
+            Teste Mann-Whitney
+        """)
+    # tests_group = data[data[""] ==]
+    # exercises_group = data[data[""] ==]
+    f_statistc, p_value = stats.mannwhitneyu(tests_group, exercises_group, "two-sided")
+
               
 def identify_variables(data):
     num_vars = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
