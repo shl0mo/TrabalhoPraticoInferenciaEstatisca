@@ -31,40 +31,78 @@ def getTestDone(data):
     if selected_test == "Chi-square Test":
         var1,var2= select_colums_categorico(data)
         chi_square_value, p_value, dof, expected = chi_square_test(data,var1,var2)
-        print("Chi-square Test Results")
-        print( p_value)
-        st.write("Chi-square Test Results")
-        st.write(f"Chi-square Value: {chi_square_value}")
-        st.write(f"P-value: {p_value}")
-        st.write(f"Degrees of Freedom: {dof}")
+        
+        with st.expander("Resultados do Teste Qui-Quadrado"):
+            st.markdown("""
+            ### Resultados do Teste Qui-Quadrado
+
+            - **Valor de Qui-Quadrado:** {:.4f}
+            - **p-valor:** {:.4f}
+            - **Graus de Liberdade:** {}
+
+            Dependendo do p-valor, podemos determinar se rejeitamos ou não a hipótese nula. Um p-valor baixo (por exemplo, menor que 0.05) indica que há evidências suficientes para rejeitar a hipótese nula, sugerindo que as variáveis analisadas estão associadas.
+            """.format(chi_square_value, p_value, dof))
 
         # Formatar os valores esperados (expected) como um DataFrame para exibição
         expected_df = pd.DataFrame(expected, columns=[f"Var{i+1}" for i in range(expected.shape[1])])
         st.write("Expected Frequencies:")
         st.dataframe(expected_df)
-
         
     elif selected_test == "T-test":
         var1, var2 = select_columns_continuo(data)
         stat, p_value = student_t_test(data,var1, var2)
-        st.write("T-test Results")
-        st.write(f"Statistic: {stat:.3f}")
-        st.write(f"P-value: {p_value:.3f}")
-        
-        
+        with st.expander("Resultados do Teste t 📘"):
+            st.markdown("""
+            ### Resultados do Teste t 📈
+
+            - **Estatística t:** {:.3f}
+            - **p-valor:** {:.3f}
+
+            Dependendo do p-valor, podemos interpretar a significância dos resultados:
+            - Um **p-valor baixo** (por exemplo, < 0.05) 📉 sugere que há evidências suficientes para rejeitar a hipótese nula, indicando uma diferença significativa entre os grupos.
+            - Um **p-valor alto** (por exemplo, ≥ 0.05) 📊 sugere que não há evidências suficientes para rejeitar a hipótese nula, indicando que as diferenças entre os grupos podem não ser significativas.
+            """.format(stat, p_value))
+
+           
     elif selected_test == "ANOVA":
-        select_colums_categorico(data)
-        results = anova_test(data)
-        display_test_results("ANOVA Results", results)
-    
+        var1,var2 =select_one_column_continuo_and_the_other_categorical(data)
+        results = anova_test(data,var1,var2)
+            
     if selected_test == "Correlation Analysis":    
         var1, var2 = select_columns_continuo(data)
-        results = correlation_analysis(data, var1, var2)
-        display_test_results("Correlation Analysis Results", results)
+        correlation_coef, p_value = correlation_analysis(data, var1, var2)
+        with st.expander("Resultados da Análise de Correlação 📘"):
+            st.markdown("""
+            ### Resultados da Análise de Correlação 📊
+
+            - **Coeficiente de Correlação:** {:.3f}
+            - **p-valor:** {:.3f}
+
+            A interpretação do coeficiente de correlação é a seguinte:
+            - Um valor **próximo de 1** ou **-1** indica uma correlação forte 🚀. Um valor positivo sugere uma correlação positiva, enquanto um valor negativo indica uma correlação negativa.
+            - Um valor **próximo de 0** indica que não há correlação linear significativa entre as variáveis 🛤.
+
+            O p-valor ajuda a determinar a significância estatística da correlação observada:
+            - Um **p-valor baixo** (por exemplo, < 0.05) 📉 sugere que a correlação é estatisticamente significativa, indicando que é improvável que a correlação observada tenha ocorrido por acaso.
+            - Um **p-valor alto** (por exemplo, ≥ 0.05) 📊 sugere que a correlação pode não ser estatisticamente significativa.
+            """.format(correlation_coef, p_value))
+
     elif selected_test == "Linear Regression Analysis":
         var1, var2 = select_columns_continuo(data)
-        results = linear_regression_analysis(data, var1, var2)
-        display_test_results("Linear Regression Analysis Results", results)
+        modelcoef, modelintercept, modelscore = linear_regression_analysis(data, var1, var2)
+        with st.expander("Resultados da Análise de Regressão Linear 📘"):
+            st.markdown("""
+            ### Resultados da Análise de Regressão Linear 📈
+
+            - **Coeficiente do Modelo:** {:.3f}
+            - **Intercepto do Modelo:** {:.3f}
+            - **Score do Modelo (R²):** {:.3f}
+
+            🧐 **Interpretação:**
+            - O **coeficiente** indica a mudança esperada na variável dependente para uma unidade de mudança na variável independente.
+            - O **intercepto** representa o valor esperado da variável dependente quando a variável independente é 0.
+            - O **score do modelo (R²)** mede a proporção da variância na variável dependente que é previsível a partir da variável independente(s).
+            """.format(modelcoef, modelintercept, modelscore))
         
 def select_columns_continuo(data):
     # verify cada coluna do dataset se é numérica ou categórica
@@ -84,17 +122,26 @@ def select_colums_categorico(data):
     st.session_state['var2'] = var2
     return var1, var2
 
-def display_test_results(title, results):
-    st.subheader(title)
-    if isinstance(results, list):
-        # Assuming results are in the format: [statistic, p-value]
-        st.metric(label="Statistic", value=f"{results[0]:.3f}")
-        st.metric(label="P-value", value=f"{results[1]:.3f}")
-    elif isinstance(results, dict):
-        for key, value in results.items():
-            st.metric(label=key, value=f"{value:.3f}")
+def select_one_column_continuo_and_the_other_categorical(data):
+    # verify cada coluna do dataset se é numérica ou categórica
+    available_columns = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    var1 = st.selectbox('Select the continuous variable:', available_columns, index=0)
+    available_columns = data.select_dtypes(include=['object', 'category']).columns.tolist()
+    var2 = st.selectbox('Select the categorical variable:', available_columns, index=0)
+    st.session_state['var1'] = var1
+    st.session_state['var2'] = var2
+    return var1, var2
 
 def chi_square_test(data, var1, var2):
+    with st.expander("Sobre o Teste Qui-quadrado (Chi-square) 📘"):
+        st.markdown("""
+        O **Teste Qui-quadrado (Chi-square)** é usado para investigar se existe uma associação entre duas categorias de uma variável. É útil para tabelas de contingência e pode ajudar a determinar se as diferenças entre as categorias são estatisticamente significativas.
+        
+        - **Hipótese Nula (H0):** Não há associação entre as variáveis categóricas.
+        - **Hipótese Alternativa (H1):** Existe uma associação entre as variáveis categóricas.
+        
+        O teste fornece um valor de Qui-quadrado, um valor P associado e os graus de liberdade da tabela de contingência. Um valor P baixo sugere que devemos rejeitar a hipótese nula, indicando uma associação significativa entre as variáveis.
+        """)
     # Create contingency table
     contingency_table = pd.crosstab(data[var1], data[var2])
     
@@ -106,8 +153,9 @@ def chi_square_test(data, var1, var2):
     contingency_table_html = contingency_table.to_html()
     
     # Usando st.markdown para exibir o HTML com a opção unsafe_allow_html ativada
-    st.markdown("Contingency Table:", unsafe_allow_html=True)
-    st.markdown(contingency_table_html, unsafe_allow_html=True)
+    with st.expander("Tabela de Contingência"):
+        st.markdown("Contingency Table:")
+        st.markdown(contingency_table_html, unsafe_allow_html=True)
     
     # Perform the chi-square test
     chi2, p, dof, expected = stats.chi2_contingency(contingency_table)
@@ -144,6 +192,14 @@ def generateVisualizationsInTabs(data):
                     st.pyplot(fig)      
 
 def student_t_test(data, var1, var2):
+    with st.expander("Sobre o Teste T de Student 📘"):
+        st.markdown("""
+        O **Teste T de Student** é utilizado para comparar as médias de duas amostras independentes e avaliar se há uma diferença estatisticamente significativa entre elas. Esse teste é útil quando você quer entender se duas condições experimentais resultam em diferentes efeitos médios. Por exemplo, pode ser usado para comparar a eficácia de dois medicamentos.
+        
+        - **Hipótese Nula (H0):** Não há diferença significativa entre as médias das duas amostras.
+        - **Hipótese Alternativa (H1):** Existe uma diferença significativa entre as médias das duas amostras.
+        """)
+        
     # Selecionando os dados das colunas especificadas pelos índices var1 e var2
     sample1 = data.iloc[:, var1]
     sample2 = data.iloc[:, var2]
@@ -162,28 +218,33 @@ def student_t_test(data, var1, var2):
     # Realizando o teste t para amostras independentes
     stat, p_value = stats.ttest_ind(sample1, sample2)
     
-    return stat, p_value
-    
+    return stat, p_value    
 
 def anova_test(data, continuous_var, categorical_var, alpha=0.05):
+    with st.expander("Sobre o Teste ANOVA 📘"):
+        st.markdown("""
+        O **Teste ANOVA (Análise de Variância)** é utilizado para comparar as médias entre três ou mais grupos independentes. Isso é útil para determinar se pelo menos um grupo difere significativamente dos outros. Por exemplo, pode ser utilizado para avaliar se a resposta a três tipos diferentes de tratamento é diferente.
 
-    if categorical_var not in data.columns or continuous_var not in data.columns:
-        raise ValueError("Specified variables must be in the provided DataFrame.")
-    
-    # Get unique group labels
-    group_labels = data[categorical_var].unique()
-    
-    if len(group_labels) == 2:
-        # Perform t-test for two categories
-        group1_label, group2_label = group_labels
-        results = student_t_test(data[continuous_var], data[categorical_var], group1_label, group2_label)
-        display_test_results("T-test Results", results)
+        - **Hipótese Nula (H0):** As médias dos grupos são todas iguais.
+        - **Hipótese Alternativa (H1):** Pelo menos uma média de grupo é diferente das outras.
+        """)
+
+    # Agrupar os dados pela variável categórica
+    groups = data.groupby(categorical_var)[continuous_var].apply(list).tolist()
+
+    # Realizar o teste ANOVA
+    f_statistic, p_value = stats.f_oneway(*groups)
+
+    # Preparar e mostrar os resultados
+    if p_value < alpha:
+        result_text = f"Com um p-valor de {p_value:.4f}, há evidências suficientes para rejeitar a hipótese nula. Portanto, existe uma diferença significativa entre as médias dos grupos. 👌"
     else:
-        # Perform ANOVA test for more than two categories
-        samples = [data[data[categorical_var] == label][continuous_var] for label in group_labels]
-        stat, p_value = stats.f_oneway(*samples)
-        results = [stat, p_value]
-        display_test_results("ANOVA Results", results)
+        result_text = f"Com um p-valor de {p_value:.4f}, não há evidências suficientes para rejeitar a hipótese nula. Assim, não podemos afirmar que existe uma diferença significativa entre as médias dos grupos.⛔"
+
+    # Exibição dos resultados
+    with st.expander("Resultados do Teste ANOVA"):
+        st.markdown("### ANOVA Results")
+        st.text(f"F-Statistic: {f_statistic:.4f}\nP-Valor: {p_value:.4f}\n{result_text}")
               
 def identify_variables(data):
     num_vars = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
@@ -199,7 +260,13 @@ def identify_variables(data):
     return categorical_var, continuous_var
 
 def correlation_analysis(data, var1, var2):
-
+    with st.expander("Sobre a Análise de Correlação 📘"):
+        st.markdown("""
+        A **Análise de Correlação** mede a associação entre duas variáveis contínuas, fornecendo um coeficiente de correlação (geralmente de Pearson) que indica a força e a direção dessa associação. Valores próximos de 1 ou -1 indicam uma forte correlação positiva ou negativa, respectivamente, enquanto valores próximos de 0 indicam nenhuma correlação.
+        
+        - **Coeficiente de Correlação de Pearson:** Mede o grau de relação linear entre duas variáveis.
+        - **Valor P:** Testa a hipótese de não haver correlação entre as variáveis. Um valor p baixo (tipicamente ≤ 0.05) indica que você pode rejeitar a hipótese nula de não correlação.
+          """)
     if var1 not in data.columns or var2 not in data.columns:
         raise ValueError("Both variables must be present in the data.")
 
@@ -215,10 +282,17 @@ def correlation_analysis(data, var1, var2):
         print("The correlation is not statistically significant.")
         st.write("The correlation is not statistically significant.")
 
-    return [correlation_coef, p_value]
+    return correlation_coef, p_value
 
 def linear_regression_analysis(data, independent_var, dependent_var):
+    with st.expander("Sobre a Análise de Regressão Linear 📘"):
+        st.markdown("""
+        A **Análise de Regressão Linear** é um método estatístico que modela a relação entre uma variável dependente e uma ou mais variáveis independentes, assumindo uma relação linear entre elas. Este modelo é representado pela equação `y = mx + b`, onde `y` é a variável dependente, `m` é o coeficiente da variável independente (inclinação), `x` é a variável independente, e `b` é o intercepto.
 
+        - **Coeficiente (inclinação):** Indica quanto `y` muda por uma unidade de mudança em `x`.
+        - **Intercepto:** O valor de `y` quando `x` é 0.
+        - **R-quadrado:** Mede o quanto da variabilidade de `y` pode ser explicada pelo modelo. Valores mais altos indicam um melhor ajuste do modelo aos dados.
+        """)
     if independent_var not in data.columns or dependent_var not in data.columns:
         raise ValueError("Both variables must be present in the data.")
     
@@ -240,7 +314,7 @@ def linear_regression_analysis(data, independent_var, dependent_var):
     st.write(f"R-squared: {model.score(X, y):.3f}")
     st.write("Higher R-squared values indicate a better fit for the model.")
 
-    return [model.coef_[0], model.intercept_, model.score(X, y)]
+    return model.coef_[0], model.intercept_, model.score(X, y)
 
 def download_dataset(dataset_url):
     # Check if the dataset exists
