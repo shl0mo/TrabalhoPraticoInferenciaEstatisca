@@ -266,14 +266,22 @@ def anova_test(data, continuous_var, categorical_var, alpha=0.05):
 def mann_whitney_test(data, alpha=0.05):
     with st.expander("Sobre o teste Mann-Whitney 📘"):
         st.markdown("""
-            O teste de **Mann-Whitney** é um teste não paramétrico utilizado para determinar se duas amostras independentes foram tiradas de populações com a mesma distribuição. Ele é usado quando as suposições necessárias para o teste t de Student não são atendidas, como quando os dados não são normalmente distribuídos.
-
+            O teste de **Mann-Whitney** é um teste não paramétrico utilizado para determinar se duas amostras independentes foram tiradas de populações com a mesma distribuição. Ele é usado quando as suposições necessárias para o teste T de Student não são atendidas, como quando os dados não são normalmente distribuídos.
             - **Hipótese nula (H0):** As distribuições das duas amostras são iguais.
             - **Hipótese alternativa (H1):** As distribuições das duas amostras não são iguais.
         """)
-    print("Mann-Whitney")
-    tests_group = data[data[4] == "TP"][3].tolist()
-    exercises_group = data[data[4] == "LAB"][3].tolist()
+
+    tests_df = data[data[4] == "TP"].head(10).reset_index().drop("index", axis=1)
+    exercises_df = data[data[4] == "LAB"].head(10).reset_index().drop("index", axis=1)
+
+    with st.expander("Ver Amostra 1 👀"):
+        st.table(tests_df)
+
+    with st.expander("Ver Amostra 2 👀"):
+        st.table(exercises_df)
+    
+    tests_group = tests_df[3].tolist()
+    exercises_group = exercises_df[3].tolist()
     n1 = len(tests_group)
     n2 = len(exercises_group)
     u_obs, p_value = stats.mannwhitneyu(tests_group, exercises_group, alternative="two-sided")
