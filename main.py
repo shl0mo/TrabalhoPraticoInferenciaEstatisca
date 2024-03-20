@@ -4,6 +4,7 @@ import scipy.stats as stats
 import os
 import requests
 import zipfile
+import seaborn as sns
 import matplotlib.pyplot as plt
 
 import streamlit as st
@@ -144,6 +145,18 @@ def chi_square_test(data, var1, var2):
         """)
     # Create contingency table
     contingency_table = pd.crosstab(data[var1], data[var2])
+    
+    with st.expander("Visualize o Heatmap 🔥"):
+        # Configura o tamanho da figura antes de criar o heatmap
+        plt.figure(figsize=(10, 6))
+        sns.heatmap(contingency_table, annot=True, fmt="d", cmap="YlGnBu", cbar=False)
+        # Adiciona títulos ou ajustes finais aqui, se necessário
+        plt.title("Tabela de Heatmap")
+        # Exibe o plot
+        st.pyplot(plt)
+        # Limpa a figura após renderização para evitar sobreposições em atualizações subsequentes
+        plt.clf()
+
     
     # Convert index and columns to string for compatibility
     contingency_table.index = contingency_table.index.map(str)
