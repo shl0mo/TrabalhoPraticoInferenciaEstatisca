@@ -300,7 +300,7 @@ def mann_whitney_test(data, alpha=0.05):
                 $n_{2} = {n2}$\n
                 $\\alpha = {alpha}$\n
                 $U_{{obs}} = {u_obs:.4f}$\n
-                $U_{0,05} = 8$\n
+                $U_{0.05} = 8$\n
                 $p = {p_value:.4f}$\n
                 **Conclusão**: {result_text}
         """)
