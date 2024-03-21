@@ -300,7 +300,7 @@ def mann_whitney_test(data, alpha=0.05):
                 $n_{2} = {n2}$\n
                 $\\alpha = {alpha}$\n
                 $U_{{obs}} = {u_obs:.4f}$\n
-                $U_{0.05} = 8$\n
+                $U_{{0,05}} = 8$\n
                 $p = {p_value:.4f}$\n
                 **Conclusão**: {result_text}
         """)
@@ -465,12 +465,7 @@ def unzip_dataset(path_to_zip_file, directory_to_extract_to,dataset_name):
 
 def load_dataset(file_path):
     if file_path.endswith('.csv'):
-        with open(file_path):
-            content = f.read()
-            if "," in content:
-                data = pd.read_csv(file_path, header=None)
-            elif ";" in content:
-                data = pd.read_csv(file_path, header=None, sep=";")
+        data = pd.read_csv(file_path, header=None)
     elif file_path.endswith('.data'):
         data = pd.read_csv(file_path, header=None)
         if "codebench" in file_path:
