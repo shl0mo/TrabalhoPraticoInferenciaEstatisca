@@ -464,7 +464,12 @@ def unzip_dataset(path_to_zip_file, directory_to_extract_to,dataset_name):
 
 def load_dataset(file_path):
     if file_path.endswith('.csv'):
-        data = pd.read_csv(file_path, header=None)
+        with open(file_path):
+            content = f.read()
+            if "," in content:
+                data = pd.read_csv(file_path, header=None)
+            elif ";" in content:
+                data = pd.read_csv(file_path, header=None, sep=";")
     elif file_path.endswith('.data'):
         data = pd.read_csv(file_path, header=None)
         if "codebench" in file_path:
